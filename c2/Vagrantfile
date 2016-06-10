@@ -1,0 +1,38 @@
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  # Set up mysql db image
+  config.vm.define "mj-mysql" do |v|
+    v.vm.provider "docker" do |mysql|
+         mysql.name    = "mj-mysql"
+         mysql.image   = "library/mysql:5.7"
+         mysql.has_ssh = false
+         mysql.volumes = ["/media/docker/mysql/db:/var/lib/mysql"]
+         mysql.env     = {
+	   'MYSQL_ROOT_PASSWORD' => 'wordpress',
+	   'MYSQL_DATABASE'      => 'wordpress',
+	   'MYSQL_USER'          => 'root',
+	   'MYSQL_PASSWORD'      => 'wordpress'
+         }
+    end
+  end
+  
+  # Set up wordpress image
+  config.vm.define "mj-wordpress" do |v|
+    v.vm.provider "docker" do |wordpress|
+      wordpress.name  = "mj-wordpress"
+      wordpress.image = "library/wordpress:latest"
+      wordpress.ports = ["80:80"]
+      wordpress.link("mj-mysql:mysql")
+      wordpress.has_ssh = false
+      wordpress.env    = {
+          'WORDPRESS_DB_USER'     => 'root',
+          'WORDPRESS_DB_PASSWORD' => 'wordpress',
+          'WORDPRESS_DB_NAME'     => 'wordpress'
+        }
+    end
+   v.vm.network "forwarded_port", guest: 80, host: 80
+  end
+  
+end
